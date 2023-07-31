@@ -8,7 +8,7 @@
   },
   "shell": {
     "init_hook": [
-      "export \"GOROOT=$(go env GOROOT)\""
+      "set-env GOROOT (go env GOROOT)"
     ],
     "scripts": {
       "build": "go build -o dist/devbox cmd/devbox/main.go",

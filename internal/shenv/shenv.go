@@ -35,6 +35,8 @@ func DetectShell(target string) Shell {
 	switch target {
 	case "bash":
 		return Bash
+	case "elvish":
+		return Elvish
 	case "fish":
 		return Fish
 	case "ksh":
