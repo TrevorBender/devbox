@@ -14,9 +14,7 @@
     "init_hook": [
       // Remove Go environment variables that might've been inherited from the
       // user's environment and could affect the build.
-      "test -z $FISH_VERSION && \\",
-      "unset       CGO_ENABLED GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK || \\",
-      "set --erase CGO_ENABLED GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK",
+      "unset-env CGO_ENABLED GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK",
     ],
     "scripts": {
       // Build devbox for the current platform

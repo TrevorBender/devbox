@@ -4,8 +4,11 @@
 package devbox
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"slices"
+	"sort"
 	"strings"
 
 	"go.jetpack.io/devbox/internal/devbox/envpath"
@@ -45,6 +48,29 @@ func exportify(vars map[string]string) string {
 		strb.WriteString("\";\n")
 	}
 	return strings.TrimSpace(strb.String())
+}
+
+func exportifyElvish(vars map[string]string) string {
+	keys := make([]string, 0, len(vars))
+	for k := range vars {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	buf := bytes.NewBuffer(nil)
+	for _, k := range keys {
+		fmt.Fprintf(buf, "set-env %s \"", k)
+		for _, r := range vars[k] {
+			switch r {
+			// TODO: escape special characters
+			case '"':
+				fmt.Fprint(buf, "\\")
+			}
+			fmt.Fprintf(buf, "%c", r)
+		}
+		fmt.Fprint(buf, "\"\n")
+	}
+	return strings.TrimSpace(buf.String())
 }
 
 // addEnvIfNotPreviouslySetByDevbox adds the key-value pairs from new to existing,

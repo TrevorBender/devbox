@@ -35,6 +35,10 @@ var shellrcTmpl = template.Must(template.New("shellrc").Parse(shellrcText))
 var fishrcText string
 var fishrcTmpl = template.Must(template.New("shellrc_fish").Parse(fishrcText))
 
+//go:embed shellrc_elvish.elv
+var elvishText string
+var elvishTmpl = template.Must(template.New("shellrc_elvish").Parse(elvishText))
+
 type name string
 
 const (
@@ -44,6 +48,7 @@ const (
 	shKsh     name = "ksh"
 	shFish    name = "fish"
 	shPosix   name = "posix"
+	shElvish  name = "elvish"
 )
 
 var ErrNoRecognizableShellFound = errors.New("SHELL in undefined, and couldn't find any common shells in PATH")
@@ -162,6 +167,9 @@ func initShellBinaryFields(path string) *DevboxShell {
 	case "fish":
 		shell.name = shFish
 		shell.userShellrcPath = fishConfig()
+	case "elvish":
+		shell.name = shElvish
+		shell.userShellrcPath = elvishConfig()
 	case "dash", "ash", "shell":
 		shell.name = shPosix
 		shell.userShellrcPath = os.Getenv(envir.Env)
@@ -214,6 +222,10 @@ func rcfilePath(basename string) string {
 
 func fishConfig() string {
 	return xdg.ConfigSubpath("fish/config.fish")
+}
+
+func elvishConfig() string {
+	return xdg.ConfigSubpath("elvish/rc.elv")
 }
 
 func (s *DevboxShell) Run() error {
@@ -273,6 +285,8 @@ func (s *DevboxShell) shellRCOverrides(shellrc string) (extraEnv map[string]stri
 		extraEnv = map[string]string{"ENV": shellescape.Quote(shellrc)}
 	case shFish:
 		extraArgs = []string{"-C", ". " + shellrc}
+	case shElvish:
+		extraArgs = []string{"-rc", shellrc}
 	}
 	return extraEnv, extraArgs
 }
@@ -313,6 +327,13 @@ func (s *DevboxShell) writeDevboxShellrc() (path string, err error) {
 	tmpl := shellrcTmpl
 	if s.name == shFish {
 		tmpl = fishrcTmpl
+	} else if s.name == shElvish {
+		tmpl = elvishTmpl
+	}
+
+	export := exportify
+	if s.name == shElvish {
+		export = exportifyElvish
 	}
 
 	err = tmpl.Execute(shellrcf, struct {
@@ -334,7 +355,7 @@ func (s *DevboxShell) writeDevboxShellrc() (path string, err error) {
 		HooksFilePath:      shellgen.ScriptPath(s.projectDir, shellgen.HooksFilename),
 		ShellStartTime:     telemetry.FormatShellStart(s.shellStartTime),
 		HistoryFile:        strings.TrimSpace(s.historyFile),
-		ExportEnv:          exportify(s.env),
+		ExportEnv:          export(s.env),
 		RefreshAliasName:   s.devbox.refreshAliasName(),
 		RefreshCmd:         s.devbox.refreshCmd(),
 		RefreshAliasEnvVar: s.devbox.refreshAliasEnvVar(),
